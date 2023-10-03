@@ -252,27 +252,27 @@ doc site https://mlflow-minio-config-doc.streamlit.app/
 - Write a custom service file for mlflow
     - Create a file `/lib/systemd/system/mlflow.service`
     - Write the required environment variable and run command
-    ```sh
-    [Unit]
-    Description=MLFlow Server
+    
+```sh
+[Unit]
+Description=MLFlow Server
+[Service]
+Type=simple
 
-    [Service]
-    Type=simple
+Environment="MLFLOW_S3_ENDPOINT_URL=https://s3.mlhub.in"
+Environment="AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxxx"
+Environment="AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-    Environment="MLFLOW_S3_ENDPOINT_URL=https://s3.mlhub.in"
-    Environment="AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxxx"
-    Environment="AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ExecStart=/bin/bash -c 'PATH=/home/ubuntu/.virtualenvs/mlflow/bin/:$PATH exec mlflow server --backend-store-uri sqlite:////home/ubuntu/ml-tracking-server/mlhub.mlflow.sqlite --default-artifact-root s3://private/ml-tracking-server/mlhub-artifacts -p 5000'
 
-    ExecStart=/bin/bash -c 'PATH=/home/ubuntu/.virtualenvs/mlflow/bin/:$PATH exec mlflow server --backend-store-uri sqlite:////home/ubuntu/ml-tracking-server/mlhub.mlflow.sqlite --default-artifact-root s3://private/ml-tracking-server/mlhub-artifacts -p 5000'
+User=ubuntu
+#Group=<group>
+#WorkingDirectory=/home/<username>
+Restart=always
+RestartSec=10
+#KillMode=mixed
 
-    User=ubuntu
-    #Group=<group>
-    #WorkingDirectory=/home/<username>
-    Restart=always
-    RestartSec=10
-    #KillMode=mixed
+[Install]
+WantedBy=multi-user.target
 
-    [Install]
-    WantedBy=multi-user.target
-
-    ``` 
+``` 
