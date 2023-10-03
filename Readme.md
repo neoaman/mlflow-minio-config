@@ -1,4 +1,5 @@
 # Setup Mlflow tracking server using MLflow and minio
+doc site https://mlflow-minio-config-doc.streamlit.app/
 
 ## Step 1: Setup minio server
 
@@ -170,4 +171,80 @@
     - Create bicket and upload some files
     - Open notebook and check for the file through boto3
     ![Check access through boto3](static/img/check-access-through-boto3.png)
+
+## Step 2: Setup mlflow server
+
+- Create a virtual environment, in my case I created a virtual environment with name mlflow in my directory /home/ubuntu/.virtualenvs/
+- Install essential packages in the virtual environment
+    ```sh
+    pip install mlflow boto3
+    ```
+- Run mlflow locally with minio credentials
+    ```sh
+    export MLFLOW_S3_ENDPOINT_URL=https://s3.mlhub.in
+    export AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+    export AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    # Then run 
+    mlflow server --backend-store-uri sqlite:////home/ubuntu/ml-tracking-server/mlhub.mlflow.sqlite \
+                  --default-artifact-root s3://private/ml-tracking-server/mlhub-artifacts -p 5000
+    ```
+- Add basic authentication for your mlflow site
+    - Install apache2-utils
+    ```sh
+    sudo apt install apache2-utils
+    ```
+    - Add user and store it in file /etc/nginx/.htpasswd, suppose my username is mu email id
+    ```sh
+    sudo htpasswd -c /etc/nginx/.htpasswd amanthe001@gmail.com
+    ```
+    - It will prompt for **New password** and **Re-type new password**, after filling both, new user will be added
+    ![Add new user Basic auth](static/img/basic-auth-nginx.png)
+- Expose the port using nginx
+    - Create a new config file, I created /etc/nginx/sites-available/mlflow-server
+    - in my mlflow-server config file I have added `auth_basic_user_file /etc/nginx/.htpasswd;` to enable Basic auth  
+    ```sh
+    server {
+    server_name mlflow.mlhub.in;
+    #server_name 140.238.227.112;
+    location / {
+        proxy_pass http://localhost:5000/;
+	    auth_basic "Administrator’s Area";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection upgrade;
+        proxy_set_header Accept-Encoding gzip;
+        }
+    listen 80;
+    listen [::]:80;
+    }
+    ```
+
+- Check for the website and perform some basic mlflow tracking operation e.g. upload dataset, text file
+    ```py
+    import os
+    os.environ["MLFLOW_S3_ENDPOINT_URL"] = "https://s3.mlhub.in"
+    os.environ["AWS_ACCESS_KEY_ID"]="xxxxxxxxxxxxxxxx"
+    os.environ["AWS_SECRET_ACCESS_KEY"]="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    os.environ['MLFLOW_TRACKING_USERNAME'] = 'amanthe001@gmail.com'
+    os.environ['MLFLOW_TRACKING_PASSWORD'] = 'xxxxxxxxxxx'
+    import mlflow
+    import pandas as pd
+
+    mlflow.set_tracking_uri('https://mlflow.mlhub.in')
+
+    df = pd.read_csv("http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv",sep=";")
+    with mlflow.start_run(run_id = run_id,experiment_id=0) as run:
+        run_id = run.info.run_id
+        mlflow.log_table(data=df.to_dict(),artifact_file="data.json")
+        mlflow.log_text("Checking artifacts",artifact_file="sample.txt")
+        mlflow.log_metric(key="metric1",value=5)
     
+    ```
+    <!-- ![Basic mlflow operation](static/img/basic-mlflow-operation.png) -->
+    - Need to pass all env variables before importing the package 
+    ![Perform mlflow in jupyternotebook](static/img/mlflow-in-jupyternotebook.png)
+    - Verify run in mlflow UI
+    ![Verify the result in mlflow ui](static/img/verify-mlflow-layout1.png)
+    - Verify the presence of logged metrics, artifact iin mlflow run 
+    ![Verify the result in mlflow ui](static/img/verify-mlflow-layout2.png)
