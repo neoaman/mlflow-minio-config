@@ -241,7 +241,6 @@ doc site https://mlflow-minio-config-doc.streamlit.app/
         mlflow.log_metric(key="metric1",value=5)
     
     ```
-    <!-- ![Basic mlflow operation](static/img/basic-mlflow-operation.png) -->
     - Need to pass all env variables before importing the package 
     ![Perform mlflow in jupyternotebook](static/img/mlflow-in-jupyternotebook.png)
     - Verify run in mlflow UI
@@ -252,7 +251,7 @@ doc site https://mlflow-minio-config-doc.streamlit.app/
 - Write a custom service file for mlflow
     - Create a file `/lib/systemd/system/mlflow.service`
     - Write the required environment variable and run command
-    
+
 ```sh
 [Unit]
 Description=MLFlow Server
